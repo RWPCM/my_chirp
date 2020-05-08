@@ -1,0 +1,70 @@
+# Environment variables are defined in the .env file
+# notbe-web and upload-web volumes for dev purposes only, remove them in production
+# to be adapted : only service name <service>_db and <service>_web
+
+version: '2'
+services:
+
+  # proxy_nginx:
+  #   build:
+  #     context: ./proxy_nginx
+  #     dockerfile: proxy_nginx.Dockerfile
+  #   image: proxy_nginx
+  #   restart: always
+  #   container_name: proxy_nginx
+  #   ports:
+  #     - 8098:80
+  #   links:
+  #     - chirp_web:fr.sergentletter.chirp_web
+
+  chirp_db:
+    build:
+      context: .
+      dockerfile: db.Dockerfile
+    image: chirp_db
+    restart: always
+    container_name: chirp_db
+    volumes:
+      - $HOME/etc/postgresql:$CONFIG_DIR
+      - $HOME/var/log/postgresql:$LOGS_DIR
+      - $HOME/var/lib/postgresql/data:$DB_DIR
+      # - chirp_db_dumps:/dumps
+    environment: 
+      POSTGRES_PASSWORD: $DB_PASS
+    ports:
+      - 5449:5432
+
+  chirp_web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    image: chirp_web
+    restart: always
+    container_name: chirp_web
+    environment:
+      POSTGRES_PASSWORD: $DB_PASS
+    volumes:
+      - ./web_app:/opt/app/web_app
+      # - ./test:/opt/app/chirp/test/
+      # - ./lib/chirp:/opt/app/chirp/lib/chirp/
+      # - ./lib/chirp_web:/opt/app/chirp/lib/chirp_web/
+      # - ./config:/opt/app/chirp/config/
+    #   - ./dict:/opt/app/dict/:ro
+    ports:
+      - 4019:4000
+    depends_on:
+      - chirp_db
+
+  # chirp_volume_manager:
+  #   build:
+  #     context: ./volume_manager
+  #     dockerfile: volume_manager.Dockerfile
+  #   image: chirp_volume_manager
+  #   restart: always
+  #   container_name: chirp_volume_manager
+  #   volumes:
+  #     - chirp_db_dumps:/shared_volumes/chirp_db/dumps
+  #     - $HOME/backup:/volume_manager/backup
+
+# volumes:
+#   chirp_db_dumps:
